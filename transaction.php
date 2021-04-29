@@ -14,6 +14,8 @@ if (!$conn) {
 
 //creation of global and tracking variables (as we query the database using the user's input, we ensure that all input is valid through these tracking variables
 // (this is much cleaner and more readable than making a 4 or 5-times-nested if-statement) 
+$isSupplierPurchase = false;
+$isSale = false;
 $isSetPurchase1 = false;
 $isSetPurchase2 = false;
 $isSetPurchase3 = false;
@@ -24,22 +26,24 @@ $isSetSale1 = false;
 $isSetSale2 = false;
 $isSetSale3 = false;
 $isSetSale4 = false;
-$descriptionString = "";
+$description = "";
 $maxID = NULL;
 $empID = NULL;
 $product_id = 0;
 $currDate = date('Y-m-d H:i:s');
-$supplierID = NULL;
+$purchaseID = NULL;
+
 $saleID = NULL;
-$productCode = NULL;
-$maxProductCode = NULL;
+$productID = NULL;
+$maxProductID = NULL;
 $transactionID = NULL;
+$maxPurchaseID = NULL;
 $price = 0;
 $cost = 0;
 $quantity = 0;
 
 
-if (isset($_POST['purchase_product_id'])) {
+if (isset($_POST['purchase_product_name'])) {
 	$isSetPurchase1 = true;
 	//identified as SUPPLIER PURCHASE
 	//querying transaction table to identify transaction id and increment it
@@ -50,46 +54,52 @@ if (isset($_POST['purchase_product_id'])) {
 			$transactionID = $row['max_id']+1;
 		}
 	}
-	//querying supplier_transaction table to find max supplier_id
-	$supplierIDPurchaseQuery = "SELECT MAX(supplier_id) AS max_id FROM supplier_transaction";
-	$result = $conn->query($supplierIDPurchaseQuery);
+	//querying supplier_purchase table to find max purchase_id
+	$purchaseIDQuery = "SELECT MAX(purchase_id) AS max_id FROM supplier_purchase";
+	$result = $conn->query($purchaseIDQuery);
 	if (!empty($result) && $result -> num_rows > 0) {
 		while($row = $result->fetch_assoc()) {
-			$maxSupplierID = $row['max_id']+1;
+			$maxpurchaseID = $row['max_id']+1;
 		}
 	}
 
-	$product_id = $_POST['purchase_product_id'];
-	if ($product_id != 0) {
-		$purchaseProductQuery = "SELECT * FROM inventory WHERE product_id=".$product_id;
-		$result = $conn->query($purchaseProductQuery);
-		if (!empty($result) && $result -> num_rows > 0) {
-			while($row = $result->fetch_assoc()) {			
-				$productCode = $row['product_id'];
-			}
-		} else {
-			die('Sorry, that product code was invalid, please try again');
+	$productName= trim(strtoupper($_POST['purchase_product_name']));
+	$purchaseProductQuery = "SELECT * FROM inventory WHERE product_name='$productName'";
+	$result = $conn->query($purchaseProductQuery);
+	if (!empty($result) && $result -> num_rows > 0) {
+		while($row = $result->fetch_assoc()) {			
+			$productID = $row['product_id'];
+			$productName = $row['product_name'];
 		}
 	} else {
-		$newProductCodeQuery = "SELECT MAX(product_id) AS max_id FROM inventory";
-		$result = $conn->query($newProductCodeQuery);
-		if(!empty($result) && $result -> num_rows > 0) {
+		$newProductIDQuery = "SELECT MAX(product_id) AS max_id FROM inventory";
+		$result = $conn->query($newProductIDQuery);
+		if(!empty($result) && $result ->num_rows > 0) {
 			while($row = $result->fetch_assoc()) {
-				$productCode = $row['max_id']+1;
-				$maxProductCode = $productCode;
+				$productID = $row['max_id']+1;
+				$maxProductID = $productID;
 			}
 		}
 	}
-	
+	 
+		
 	if (isset($_POST['supplier_name'])) {
+		
 		$isSetPurchase2 = true;
-		$supplierName = strtoupper($_POST['supplier_name']);
-		$supplierNameQuery = "SELECT * FROM supplier_transaction WHERE supplier_name=".$supplierName;
+		$supplierName = mysqli_real_escape_string($conn, trim(strtoupper($_POST['supplier_name'])));
+		$maxPurchaseIDQuery = "SELECT MAX(purchase_id) as max_id FROM supplier_purchase";
+		$result = $conn->query($maxPurchaseIDQuery);
+		if(!empty($result) && $result->num_rows > 0) {
+			while ($row = $result->fetch_assoc()) {
+				$maxPurchaseID = $row['max_id']+1;
+			}
+		}
+		$supplierNameQuery = "SELECT * FROM supplier_purchase WHERE supplier_name='$supplierName'";
 		$result = $conn->query($supplierNameQuery);
 		if(!empty($result) && $result->num_rows > 0) {
-			$supplierID = $row['supplier_id'];
+			$purchaseID = $row['purchase_id'];
 		} else {
-			$supplierID = $maxSupplierID;
+			$purchaseID = $maxPurchaseID;
 		}
 	} 
 	if (isset($_POST['supplier_price'])) {
@@ -101,9 +111,9 @@ if (isset($_POST['purchase_product_id'])) {
 		$quantity = $_POST['quantity_purchased'];
 
 	}
-	if(isset($_POST['purchase_item_description'])) {
+	if(isset($_POST['description']) && $_POST['description'] != "") {
 		$isSetPurchase5 = true;
-		$descriptionString = $_POST['purchase_item_description'];
+		$description = mysqli_real_escape_string($conn, $_POST['description']); 
 		
 	}
 	//verifying employee_id
@@ -117,12 +127,12 @@ if (isset($_POST['purchase_product_id'])) {
 			$isSetPurchase6 = true;
 		}
 	}
-	
+
 	//if all fields in sale have data in them, attempt to use that data to create a new transaction+purchase, as well as a new product if need be
 	if ($isSetPurchase1 && $isSetPurchase2 && $isSetPurchase3 && $isSetPurchase4 && $isSetPurchase6) {
 		//if product is new, create an entry for it in inventory
-		if($isSetPurchase5 && $productCode == $maxProductCode) {	
-			$newProductQuery = "INSERT INTO `inventory`(`product_id`, `product_name`, `description`) VALUES ('$productCode', 'placeholder', '$descriptionString')";
+		if($isSetPurchase5 && $productID == $maxProductID) {	
+			$newProductQuery = "INSERT INTO `inventory` (`product_id`, `product_name`, `description`, `qty_in_stock`) VALUES ('$productID', '$productName', '$description', '$quantity')";
 			$result = $conn->query($newProductQuery);
 			if(!$result) {
 				die($newProductQuery);
@@ -135,21 +145,23 @@ if (isset($_POST['purchase_product_id'])) {
 			die("Sorry, but we weren't able to log that transaction, please review your input(s)".$transactionID." ".$currDate." ".$emp_id);
 			
 		} else {
-			echo 'transaction success ';
+			echo 'Transaction success';
 		}
 		//logging new purchase
-		$newPurchaseQuery = "INSERT INTO `supplier_transaction` (`supplier_id`, `transaction_id`, `product_id`, `supplier_name`, `quantity_purchased`, `cost`) VALUES ('$supplierID', '$transactionID', '$productCode', '$supplierName', '$quantity', '$cost')";
+		$newPurchaseQuery = "INSERT INTO `supplier_purchase` ( `transaction_id`, `product_id`, `supplier_name`, `quantity_purchased`, `cost`) VALUES ('$transactionID', '$productID',"."'$supplierName'".", '$quantity', '$cost')";
 		$result = $conn->query($newPurchaseQuery);
 		if(!$result) {
-			die("Sorry, but we weren't able to log that purchase, please review your input(s)".$supplierID."_".$transactionID."_".$productCode."_".$supplierName."_".$quantity."_".$cost."_".$conn->error);
+			die("Sorry, but we weren't able to log that purchase, please review your input(s)".$purchaseID."_".$transactionID."_".$productID."_".$supplierName."_".$quantity."_".$cost."_".$conn->error);
 		} else {
-			echo 'purchase success ';
+			echo 'Purchase success!';
 		}
+	} else {
+		die($isSetPurchase1."_".$isSetPurchase2."_".$isSetPurchase3."_".$isSetPurchase4);
 	}
-
 //end of SUPPLIER PURCHASE
 //beginning of RETAIL SALE		
-} else if(isset($_POST['sale_product_id'])) {
+} else if(isset($_POST['product_name'])) {
+
 	//identified as RETAIL SALE
 	$transactionIDSaleQuery = "SELECT MAX(transaction_id) AS max_id FROM transaction";
 	$result = $conn->query($transactionIDSaleQuery);
@@ -162,29 +174,27 @@ if (isset($_POST['purchase_product_id'])) {
 	}
 	$saleIDQuery = "SELECT MAX(sale_id) AS max_id FROM sale";
 	$result = $conn->query($saleIDQuery);
-	//
 	if (!empty($result) && $result->num_rows > 0) {
-		//incrementing ID by 1 (enabling auto-incrementing in phpmyadmin isn't possible due to existing foreign key relationships)
+		//incrementing ID by 1 
 		while($row = $result->fetch_assoc()) {
 			$saleID = $row['max_id']+1;
 		}
 	}
-		
-	$saleProductID = $_POST['sale_product_id'];
-	$saleProductQuery = "SELECT * FROM inventory WHERE product_id='$saleProductID'";
+	//cleaning user input and searching the db for a match to the name
+	$saleProductName = trim(strtoupper($_POST['product_name']));
+	$saleProductQuery = "SELECT * FROM inventory WHERE product_name='$saleProductName'";
 	$result = $conn->query($saleProductQuery);
 	if (!empty($result) && $result->num_rows > 0) {
 		$isSetSale1 = true;
 		while($row = $result->fetch_assoc()) {		
-			$productCode = $row['product_id'];
+			$productID = $row['product_id'];
 		}
 	} else {
-		die('Please enter a valid product ID');
+		die('Please enter a valid product name');
 	}
+	//if linked to previous transaction (two transactions that share the same sale ID), decrement saleID so that it's equal to MAX(sale_id)-1
 	if(isset($_POST['check_box'])){
-		$transactionID--;
 		$saleID--;
-		
 	}
 	if (isset($_POST['sale_price'])) {
 		$isSetSale2 = true;
@@ -217,14 +227,16 @@ if (isset($_POST['purchase_product_id'])) {
 			echo 'success!';
 		}
 		//logging sale
-		$newSaleQuery = "INSERT INTO `sale` (`sale_id`, `product_id`, `transaction_id`, `quantity_sold`, `retail_price`) VALUES ('$saleID', '$productCode', '$transactionID', '$quantity', '$price')";
+		$newSaleQuery = "INSERT INTO `sale` (`sale_id`, `product_id`, `transaction_id`, `quantity_sold`, `retail_price`) VALUES ('$saleID', '$productID', '$transactionID', '$quantity', '$price')";
 		$result = $conn->query($newSaleQuery);
 		if(!$result) {
-			die("Sorry, but a new sale could not be created. Please review your input(s).".$saleID."_".$transactionID."_".$productCode."_".$quantity."_".$price);
+			die("Sorry, but a new sale could not be created. Please review your input(s).".$saleID."_".$transactionID."_".$productID."_".$quantity."_".$price);
 		} else {
 			echo 'sale logged!';
 		}
-	}	
+	} else {
+		die($saleID."_".$transactionID."_".$productID."_".$quantity."_".$price);
+	}
 }
 
 ?>
@@ -237,17 +249,16 @@ if (isset($_POST['purchase_product_id'])) {
 <link rel="stylesheet" href="css/w3-theme-black.css">
 
 <style>
-.footerdown {
-    position:absolute;
-    bottom:0;
+  .footerdown {
+    position: absolute;
+    bottom: 0;
     margin-bottom: 3%;
   }
 
-.formposition {
-  position:relative;
+  .formposition {
+    position: relative;
 
   }
-
 </style>
 
 <body>
@@ -255,23 +266,27 @@ if (isset($_POST['purchase_product_id'])) {
   <!--Navigation bar STARTS
     -Button for current screen gets higlighted pale red
     -Clicking logo at left returns user to initial navigation Homepage screen-->
-    <div class="w3-bar w3-border-bottom" style="width:100%">
+  <div class="w3-bar w3-border-bottom" style="width:100%">
 
-      <a href="homepage.html" class="w3-left" style="width:12.25%;">
+    <a href="homepage.php" class="w3-left" style="width:12.25%;">
       <img src="images/NEWnavbarlogo.png" style="width:100%;"></a>
-  
-      <a href="index.html" class="w3-bar-item w3-button w3-border-left w3-right w3-black w3-padding-24">LOG<br>OUT</a>
-  
-      <a href="employeeresources.html" class="w3-bar-item w3-border-left w3-button w3-right w3-padding-24">EMPLOYEE<br>RESOURCES</a>
-  
-      <a href="transactionhistory.html" class="w3-bar-item w3-border-left w3-button w3-right w3-padding-24">TRANSACTION<br>HISTORY</a>
-  
-      <a href="inventory.html" class="w3-bar-item w3-button w3-border-left w3-right w3-padding-24 ">VIEW<br>INVENTORY</a>
-  
-      <a href="transaction.html" class="w3-bar-item w3-button w3-border-left w3-right w3-padding-24 w3-pale-red">NEW<br>TRANSACTION</a><!--Current screen-->
-  
-    </div>
+
+    <a href="index.php" class="w3-bar-item w3-button w3-border-left w3-right w3-black w3-padding-24">LOG<br>OUT</a>
+
+    <a href="employeeresources.php"
+      class="w3-bar-item w3-border-left w3-button w3-right w3-padding-24">EMPLOYEE<br>RESOURCES</a>
+
+    <a href="transactionhistory.php"
+      class="w3-bar-item w3-border-left w3-button w3-right w3-padding-24">TRANSACTION<br>HISTORY</a>
+
+    <a href="inventory.php" class="w3-bar-item w3-button w3-border-left w3-right w3-padding-24 ">VIEW<br>INVENTORY</a>
+
+    <a href="transaction.php"
+      class="w3-bar-item w3-button w3-border-left w3-right w3-padding-24 w3-pale-red">NEW<br>TRANSACTION</a>
     <!--Current screen-->
+
+  </div>
+  <!--Current screen-->
 
   </div>
   <!--Navigation bar ENDS-->
@@ -282,61 +297,62 @@ if (isset($_POST['purchase_product_id'])) {
     <!--Enter Purchasing Information form STARTS-->
     <div class="w3-half w3-card-4 w3-light-grey w3-border" style="width:48%;height:95%;margin-right:2%">
 
-        <div class="w3-container w3-center">
-          <h2>Enter Purchasing Information</h2>
-        </div>
+      <div class="w3-container w3-center">
+        <h2>Enter Purchasing Information</h2>
+      </div>
 
-       
-        <form class="w3-container formposition" style="width:100%;height:90%" method="POST" action="transaction.php"><!--Action denotes URL or file to send form information to-->
 
-          <p style="height:10%;">
-            <label class="w3-text"><b>Enter item ID:</b></label>
-            <input class="w3-input w3-border" id="purchase_product_id" name="purchase_product_id" type="text"
-              placeholder="Enter item ID if existing item in inventory, or 0 for new items from suppliers">
-          </p>
+      <form class="w3-container formposition" style="width:100%;height:90%" method="POST" action="transaction.php">
+        <!--Action denotes URL or file to send form information to-->
 
-          <p style="height:10%;">
-            <label class="w3-text-black"><b>Enter supplier name:</b></label>
-            <input class="w3-input w3-border" name="supplier_name" id="supplier_name" type="text" placeholder="ENTER SUPPLIER NAME HERE">
-          </p>
+        <p style="height:10%;">
+          <label class="w3-text-black"><b>Confirm employee ID:</b></label>
+          <input class="w3-input w3-border" name="purchase_emp_id" type="text" placeholder="Ex: 123">
+        </p>
 
-          <p style="height:10%;">
-            <label class="w3-text-black"><b>Enter supplier price ($usd):</b></label>
-            <input class="w3-input w3-border" name="supplier_price" id="supplier_price" type="text" step="0.01" min="0.01" placeholder="Ex: 6.50">
-            <!--Step allows for cents instead of requiring full dollar values-->
-          </p>
+        <p style="height:10%;">
+          <label class="w3-text"><b>Enter item name:</b></label>
+          <input class="w3-input w3-border" name="purchase_product_name" type="text" placeholder="Ex: Moncler Suyen Hooded Down Parka">
+        </p>
 
-          <p style="height:10%;">
-            <label class="w3-text-black"><b>Enter quantity purchased:</b> </label>
-            <input class="w3-input w3-border" name="quantity_purchased" type="text" placeholder="Ex: 123">
-          </p>
-			<p style="height:10%;">
-            <label class="w3-text"><b>Confirm Employee ID:</b></label><br>
-            <input type="text" name="purchase_emp_id" id="purchase_emp_id" class="w3-select w3-border" style="width:100%">
-             
-          </p>
-          <p style="height:10%;">
-            <label class="w3-text-black"><b>Enter item description/comments:</b></label>
-            <textarea class="w3-input w3-border" style="width:100%;max-width:100%;" name="purchase_item_description" id="purchase_item_description"
-              type="text"
-              placeholder="(Provide more in-depth description of item's appearance or features, if necessary"
-              wrap="soft"></textarea>
-            <!--Max height and width style requirements prevent user from resizing text box to be to large
+        <p style="height:10%;">
+          <label class="w3-text-black"><b>Enter supplier name:</b></label>
+          <input class="w3-input w3-border" name="supplier_name" type="text" placeholder="Ex: Lena's Textiles">
+        </p>
+
+        <p style="height:10%;">
+          <label class="w3-text-black"><b>Enter supplier price ($usd):</b></label>
+          <input class="w3-input w3-border" name="supplier_price" type="text" placeholder="Ex: 6.50">
+          <!--Step allows for cents instead of requiring full dollar values-->
+        </p>
+
+        <p style="height:10%;">
+          <label class="w3-text-black"><b>Enter quantity purchased:</b> </label>
+          <input class="w3-input w3-border" name="quantity_purchased" type="text" placeholder="Ex: 123">
+        </p>
+
+        <p style="height:10%;">
+          <label class="w3-text-black"><b>Enter item description/comments:</b></label>
+          <textarea class="w3-input w3-border" style="width:100%;max-width:100%;" name="description" type="text"
+            placeholder="(Provide more in-depth description of item's appearance or features, if necessary" wrap="soft">
+          </textarea>
+          <!--Max height and width style requirements prevent user from resizing text box to be to large
                           -Soft wrap allows user to see all text entered in box without adding spaces to database entry-->
-          </p>
-          
+        </p>
 
-          <!--Clear and Log Purchase buttons STARTS-->
-          <footer class="footerdown" style="width:95%;">
-            <!--Clears information typed and resets form-->
-            <button class="w3-left w3-btn w3-dark-grey w3-xlarge" type="reset">Clear</button>
-            
-            <!--Sends information to file listed in 'action' at form start-->
-            <input type="submit" class="w3-right w3-btn w3-dark-grey w3-xlarge" id="log_purchase" name="log_purchase">
-          </footer>
-          <!--Clear and Log Purchase buttons ENDS-->
 
-        </form>
+        <!--Clear and Log Purchase buttons STARTS-->
+        <footer class="footerdown" style="width:95%;">
+          <!--Clears information typed and resets form-->
+          <button class="w3-left w3-btn w3-dark-grey w3-xlarge" type="reset">Clear</button>
+
+          <!--Sends information to file listed in 'action' at form start-->
+          <input class="w3-right w3-btn w3-dark-grey w3-xlarge" type="submit" id="logTransaction"
+            name="logTransaction" value="Log Purchase">
+        </footer>
+        <!--Clear and Log Purchase buttons ENDS-->
+
+      </form>
 
     </div>
     <!--Enter Purchasing Information form ENDS-->
@@ -344,56 +360,73 @@ if (isset($_POST['purchase_product_id'])) {
     <!--Enter Sales Information form STARTS-->
     <div class="w3-half w3-card-4 w3-white w3-border" style="width:48%;height:95%;margin-left:2%;">
 
-        <div class="w3-container w3-center">
-          <h2>Enter Sales Information</h2>
-        </div>
+      <div class="w3-container w3-center">
+        <h2>Enter Sales Information</h2>
+      </div>
 
-        <form class="w3-container formposition" style="width:100%;height:90%" method="POST" action="transaction.php">
-          <!--Action denotes URL or file to send form information to-->
+      <form class="w3-container formposition" style="width:100%;height:90%" method="POST" action="transaction.php">
+        <!--Action denotes URL or file to send form information to-->
 
-          <p style="height:10%;">
-            <label class="w3-text"><b>Enter Item ID:</b></label><br>
-            <input type="text" name="sale_product_id" id="sale_product_id" class="w3-select w3-border" name="option" style="width:100%">
-             
-          </p>
-          
-          <p style="height:10%">
-            <label class="w3-text"><b>Tie to previous transaction? (check for 'yes'):</b></label><br>
-            <!--Check box to assign same transaction ID and sale ID as previous transaction entered
+        <p style="height:10%;">
+          <label class="w3-text-black"><b>Confirm employee ID:</b></label>
+          <input class="w3-input w3-border" name="sale_emp_id" type="text" placeholder="Ex: 123">
+        </p>
+
+        <p style="height:10%;">
+          <label class="w3-text"><b>Select item name:</b></label><br>
+          <select class="w3-select w3-border" name="product_name" style="width:100%">
+			<?php
+			$itemNameQuery = "SELECT * FROM inventory";
+			$result = $conn->query($itemNameQuery);
+			if(!empty($result) && $result->num_rows > 0) {
+				while ($row = $result->fetch_assoc()){
+					echo '<option value="'.$row['product_name'].'">';
+					echo $row['product_name'];
+				
+				}
+			}
+			?> 
+			</option> 
+		
+                        
+            <!--Provides dropdown box for all item names currently in inventory for user to select when logging a sale
+               -Prevents a mistype from updating the incorrect product in database (if a text input box were used instead)-->
+          </select>
+        </p>
+
+        <p style="height:10%">
+          <label class="w3-text"><b>Tie to previous transaction? (check for 'yes'):</b></label><br>
+          <!--Check box to assign same transaction ID and sale ID as previous transaction entered
              -Avoids creation of multiple 'transactions' being recorded for multiple products purchased by one customer-->
-            <input class="w3-check" type="checkbox" name="check_box" id="check_box">
-            
-          </p>
+          <input type="checkbox" name="check_box" class="w3-check">
 
-          <p style="height:10%;">
-            <label class="w3-text-black"><b>Enter retail price ($usd):</b></label>
-            <input class="w3-input w3-border" name="sale_price" id="sale_price" type="number" step="0.01" min="0.01" placeholder="Ex: 14.99">
-            <!--Step allows for cents instead of requiring full dollar values-->
-          </p>
+        </p>
 
-          <p style="height:10%;">
-            <label class="w3-text-black"><b>Enter quantity sold:</b> </label>
-            <input class="w3-input w3-border" name="quantity_sold" id="quantity_sold" type="number" placeholder="Ex: 123">
-          </p>
-		  <p style="height:10%;">
-            <label class="w3-text"><b>Confirm Employee ID:</b></label><br>
-            <input type="text" name="sale_emp_id" id="sale_emp_id" class="w3-select w3-border" style="width:100%">
-             
-          </p>
+        <p style="height:10%;">
+          <label class="w3-text-black"><b>Enter retail price ($usd):</b></label>
+          <input class="w3-input w3-border" name="sale_price" type="text" placeholder="Ex: 14.99">
+          <!--Step allows for cents instead of requiring full dollar values-->
+        </p>
 
-          <!--Clear and Log Sale buttons STARTS-->
-          <footer class="footerdown" style="width:95%;">
-          
-            <!--Clears information typed and resets form-->
-            <button class="w3-left w3-btn w3-dark-grey w3-xlarge" type="reset">Clear</button>
+        <p style="height:10%;">
+          <label class="w3-text-black"><b>Enter quantity sold:</b> </label>
+          <input class="w3-input w3-border" name="quantity_sold" type="text" placeholder="Ex: 123">
+        </p>
 
-            <!--Sends information to file listed in 'action' at form start-->
-            <input type="submit" class="w3-left w3-btn w3-dark-grey w3-xlarge"id="logTransaction" name="logTransaction">
-          
-          </footer>
-          <!--Clear and Log Sale buttons ENDS-->
-          
-        </form>
+        <!--Clear and Log Sale buttons STARTS-->
+        <footer class="footerdown" style="width:95%;">
+
+          <!--Clears information typed and resets form-->
+          <button class="w3-left w3-btn w3-dark-grey w3-xlarge" type="reset">Clear</button>
+
+          <!--Sends information to file listed in 'action' at form start-->
+          <input class="w3-right w3-btn w3-dark-grey w3-xlarge" type="submit" id="logTransaction"
+            name="logTransaction" value="Log Sale">
+
+        </footer>
+        <!--Clear and Log Sale buttons ENDS-->
+
+      </form>
     </div>
     <!--Enter Sales Information form ENDS-->
 
