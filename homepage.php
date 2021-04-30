@@ -39,11 +39,12 @@ if(!isset($submit)) {
 			return $this->$jobCode;
 		}
 	}
-	
+	//initial login for manager to login to display; all transactions still link to an employee ID to hold people accountable
 	$loginQuery = "SELECT * FROM employee WHERE employee_id ='$submit'";
 	$result = $conn->query($loginQuery);
 	if (!empty($result) && $result -> num_rows > 0) {
 		while($row = $result->fetch_assoc()) {
+			//greet user upon successful login
 			echo 'Welcome '.$row['first_name'].' '.$row['last_name'].'!';
 			
 		}		

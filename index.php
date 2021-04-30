@@ -12,34 +12,6 @@ $conn = new mysqli($servername, $username, $password, $dbname);
 if (!$conn) {
 	die('failed to connect to db');
 }
-
-class Employee {
-	private $employeeName;
-	private $employeeID;
-	private $jobCode;
-
-	function setEmployeeName($name) {
-		$this->$employeeName = $name;
-	}
-	function setEmployeeID($id) {
-		$this->$employeeID = $id;
-	}
-	function setJobCode($code) {
-		$this->$jobCode = $code;
-	}
-	function getEmployeeName() {
-		return $this->$employeeName;
-	}
-	function getEmployeeID() { 
-		return $this->$employeeID;
-	}
-	function getJobCode() {
-		return $this->$jobCode;
-	}
-}
-
-
-
 ?>
   
 <html>

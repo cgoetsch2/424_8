@@ -32,7 +32,6 @@ $empID = NULL;
 $product_id = 0;
 $currDate = date('Y-m-d H:i:s');
 $purchaseID = NULL;
-
 $saleID = NULL;
 $productID = NULL;
 $maxProductID = NULL;
@@ -63,6 +62,7 @@ if (isset($_POST['purchase_product_name'])) {
 		}
 	}
 
+	//searching for product name within db
 	$productName= trim(strtoupper($_POST['purchase_product_name']));
 	$purchaseProductQuery = "SELECT * FROM inventory WHERE product_name='$productName'";
 	$result = $conn->query($purchaseProductQuery);
@@ -72,6 +72,7 @@ if (isset($_POST['purchase_product_name'])) {
 			$productName = $row['product_name'];
 		}
 	} else {
+		//if no match, generate new product id by calling SELECT MAX(product_id) and incrementing by 1
 		$newProductIDQuery = "SELECT MAX(product_id) AS max_id FROM inventory";
 		$result = $conn->query($newProductIDQuery);
 		if(!empty($result) && $result ->num_rows > 0) {
@@ -84,9 +85,11 @@ if (isset($_POST['purchase_product_name'])) {
 	 
 		
 	if (isset($_POST['supplier_name'])) {
-		
 		$isSetPurchase2 = true;
+		//cleaning user input and assigning to var to make it easier to reference when querying
 		$supplierName = mysqli_real_escape_string($conn, trim(strtoupper($_POST['supplier_name'])));
+		
+		//generating new purchase_id for new purchase created in supplier_purchase table
 		$maxPurchaseIDQuery = "SELECT MAX(purchase_id) as max_id FROM supplier_purchase";
 		$result = $conn->query($maxPurchaseIDQuery);
 		if(!empty($result) && $result->num_rows > 0) {
@@ -94,6 +97,7 @@ if (isset($_POST['purchase_product_name'])) {
 				$maxPurchaseID = $row['max_id']+1;
 			}
 		}
+		//query db for match to name (which has already been converted into an escape string)
 		$supplierNameQuery = "SELECT * FROM supplier_purchase WHERE supplier_name='$supplierName'";
 		$result = $conn->query($supplierNameQuery);
 		if(!empty($result) && $result->num_rows > 0) {
@@ -102,6 +106,7 @@ if (isset($_POST['purchase_product_name'])) {
 			$purchaseID = $maxPurchaseID;
 		}
 	} 
+	//checking text fields and assigning data within them to variables
 	if (isset($_POST['supplier_price'])) {
 		$isSetPurchase3 = true;	
 		$cost = $_POST['supplier_price'];
@@ -111,6 +116,7 @@ if (isset($_POST['purchase_product_name'])) {
 		$quantity = $_POST['quantity_purchased'];
 
 	}
+	//description only necessary if new product being created 
 	if(isset($_POST['description']) && $_POST['description'] != "") {
 		$isSetPurchase5 = true;
 		$description = mysqli_real_escape_string($conn, $_POST['description']); 
@@ -130,7 +136,7 @@ if (isset($_POST['purchase_product_name'])) {
 
 	//if all fields in sale have data in them, attempt to use that data to create a new transaction+purchase, as well as a new product if need be
 	if ($isSetPurchase1 && $isSetPurchase2 && $isSetPurchase3 && $isSetPurchase4 && $isSetPurchase6) {
-		//if product is new, create an entry for it in inventory
+		//if product is new, create an entry for it in inventory (MUST have a description and have a unique product_id assigned to it
 		if($isSetPurchase5 && $productID == $maxProductID) {	
 			$newProductQuery = "INSERT INTO `inventory` (`product_id`, `product_name`, `description`, `qty_in_stock`) VALUES ('$productID', '$productName', '$description', '$quantity')";
 			$result = $conn->query($newProductQuery);
@@ -196,6 +202,8 @@ if (isset($_POST['purchase_product_name'])) {
 	if(isset($_POST['check_box'])){
 		$saleID--;
 	}
+	
+	//further assigning $_POST values to variables for easier referencing
 	if (isset($_POST['sale_price'])) {
 		$isSetSale2 = true;
 		$price = round($_POST['sale_price'], 2);
@@ -376,6 +384,8 @@ if (isset($_POST['purchase_product_name'])) {
           <label class="w3-text"><b>Select item name:</b></label><br>
           <select class="w3-select w3-border" name="product_name" style="width:100%">
 			<?php
+			
+			//querying inventory table for all product names and iteratively displaying them in a dropdown list
 			$itemNameQuery = "SELECT * FROM inventory";
 			$result = $conn->query($itemNameQuery);
 			if(!empty($result) && $result->num_rows > 0) {

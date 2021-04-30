@@ -14,31 +14,6 @@ if (!$conn) {
 $quantitySold = 0;
 $quantityPurchased =0;
 $productCode = 0;
-class Employee {
-		private $employeeName;
-		private $employeeID;
-		private $jobCode;
-		
-		function setEmployeeName($name) {
-			$this->$employeeName = $name;
-		}
-		function setEmployeeID($id) {
-			$this->$employeeID = $id;
-		}
-		function setJobCode($code) {
-			$this->$jobCode = $code;
-		}
-		function getEmployeeName() {
-			return $this->$employeeName;
-		}
-		function getEmployeeID() { 
-			return $this->$employeeID;
-		}
-		function getJobCode() {
-			return $this->$jobCode;
-		}
-}
-	
 
 ?>
 
@@ -129,6 +104,7 @@ class Employee {
 					$quantityPurchased = $row['sum_qp'];
 				}
 			}
+			//queries database for all rows of sale with a matching product_id, AKA the total quantity of that item that has been sold
 			$quantitySoldQuery = "SELECT SUM(quantity_sold) AS sum_qs FROM sale WHERE product_id='$productID'";
 			$result = $conn->query($quantitySoldQuery);
 			if(!empty($result) && $result->num_rows > 0) {

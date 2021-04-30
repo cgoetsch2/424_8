@@ -132,9 +132,11 @@ if (!$conn) {
 	die("failed to connect to db");
 }
 
+//INNER JOIN returns records where matches are found in BOTH tables (should always be the case if transaction.php works correctly, as it was set up to only product complete records in transaction and, inventory, and supplier_purchase/sale
 $saleQuery = "SELECT * FROM sale INNER JOIN transaction ON sale.transaction_id=transaction.transaction_id ORDER BY sale.transaction_id $queryConcat";
 $result = $conn->query($saleQuery);
 if(!empty($result) && $result->num_rows > 0) {
+	//iteratively display rows of table by echoing <td> statements followed by indexes to $row['value']
 	while ($row = $result->fetch_assoc()) {
 		echo '<tr>';
 		echo '<td>';

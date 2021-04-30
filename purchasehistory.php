@@ -1,7 +1,4 @@
 <!DOCTYPE html>
-<?php 
-
-?>
 <html>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -140,6 +137,7 @@ $transactionType = "PURCHASES";
 $purchaseQuery="SELECT * FROM supplier_purchase INNER JOIN transaction ON supplier_purchase.transaction_id=transaction.transaction_id ORDER BY supplier_purchase.transaction_id $queryConcat";
 $result = $conn->query($purchaseQuery);
 if(!empty($result) && $result->num_rows > 0) {
+	//iteratively display rows of table by echoing <td> statements followed by indexes to $row['value']
 	while ($row = $result->fetch_assoc()) {
 		echo '<tr>';
 		echo '<td>';
@@ -165,12 +163,6 @@ if(!empty($result) && $result->num_rows > 0) {
 } else {
 	die($purchaseQuery);
 }
-
-
-	
-
-	
-
 		
 ?>
 
