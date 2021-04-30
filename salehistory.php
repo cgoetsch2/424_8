@@ -1,16 +1,17 @@
 <!DOCTYPE html>
+
+    
 <?php 
 
 if(isset($_POST['order_by'])) {
-	if ($_POST['order_by'] == "NEW") {
-		$queryConcat = "DESC";
-	} else {
-		$queryConcat = "ASC";
-	}
+	$queryConcat = "ASC";
 } else {
 	$queryConcat = "DESC";
 }
 ?>
+
+
+
 <html>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -48,7 +49,7 @@ if(isset($_POST['order_by'])) {
   .fixed_header td {
     padding: 0.5%;
     text-align: left;
-    width:9%;
+    width:5%;
   }
 
 </style>
@@ -82,22 +83,27 @@ if(isset($_POST['order_by'])) {
 
     <!--Container for sorting/filter dropdowns STARTS-->
     <div class="w3-display-container w3-black w3-border" style="width:100%;height:13%;">
-      
-      <!--Transaction display button-->
-		<form action="purchasehistory.php" method="POST"> <input type="submit" value="SWITCH TO PURCHASE VIEW"> </form>
-		
+    <h1 class="w3-display-topmiddle w3-border" style="padding-left:1%;padding-right:1%;;margin-block-start: 1%;">Sales History</h1>
 
-      </div>
-      <!--Sorting date dropdown-->
-	  <form action="salehistory.php" method="POST">
-       <div class="w3-half" style="margin-block-start: 1.75%;">
-        <label class="w3-text" style="margin-left:40%;font-size:medium;"><b>ORDER BY:</b></label>
-		<input type="radio" name="order_by" value="ASC" class="w3-check"> 
-		<input type="radio" name="order_by" value="DESC" class="w3-check"> 
-		<input type=submit>
-		</form> 
-	
-      </div>
+        <!--Sorting date selection-->
+        <form class="w3-half" style="margin-block-start: 1.75%;" action="salehistory.php" type="submit" method="POST">
+
+            <label class="w3-text" style="font-size:medium;margin-left:10%"><b>Check to sort by OLD</b></label>
+        
+            <input class="w3-check" style="margin-left:1.5%;" type="checkbox" name="order_by" value="ASC"><label style="margin-left:1%;">Old</label> 
+            <input class="w3-button w3-dark-grey" type="submit" style="margin-left:1.5%;margin-block-end:0.5%;" value="GO!">
+
+        </form>
+        
+        <!--Switch display-->
+        <form class="w3-half w3-center" style="margin-block-start:1.75%;" action="purchasehistory.php" type="submit">
+           
+            <label class="w3-text" style="margin-left:45%;font-size:medium;"><b>Switch to Purchase View: </b></label>
+            <input class="w3-button w3-dark-grey" type="submit" style="margin-left:1.5%;margin-block-end:0.5%;" value="GO!">
+            
+        </form>
+    
+    
 
     </div>
     <!--Container for sorting-filter dropdowns ENDS-->
@@ -107,12 +113,12 @@ if(isset($_POST['order_by'])) {
     <thead style="width:100%;">
 
     <tr style="font-size: small;">
-      <th>Transaction Date</th>
+      <th>Sale Date</th>
       <th>Transaction ID</th>
-      <th>Purchase/Sale ID</th>
+      <th>Sale ID</th>
       <th>Product ID</th>
-      <th class="w3-right-align">Quantity Purchased/Sold</th><!--Aligns header cell ONLY ... does not affect cells in table column-->
-      <th class="w3-right-align">Transaction Price</th>
+      <th class="w3-right-align">Quantity Sold</th><!--Aligns header cell ONLY ... does not affect cells in table column-->
+      <th class="w3-right-align">Retail Price</th>
     </tr>
     </thead>
     <!--Table header ENDS-->
@@ -120,6 +126,8 @@ if(isset($_POST['order_by'])) {
     <tbody style="width:100%;">
     <!--'tr' encases properties for new row in table ... HTML requires manual entry of each row value
      -Code TBU to query database and display DB information instead-->
+
+
 <?php
 //db login info
 $servername = 'localhost';
@@ -138,7 +146,7 @@ $result = $conn->query($saleQuery);
 if(!empty($result) && $result->num_rows > 0) {
 	//iteratively display rows of table by echoing <td> statements followed by indexes to $row['value']
 	while ($row = $result->fetch_assoc()) {
-		echo '<tr>';
+		echo '<tr class="w3-hover-pale-red">';
 		echo '<td>';
 		echo $row['transaction_datetime'];
 		echo '</td>';
@@ -151,10 +159,10 @@ if(!empty($result) && $result->num_rows > 0) {
 		echo '<td>';
 		echo $row['product_id'];
 		echo '</td>';
-		echo '<td>';
+		echo '<td class="w3-right-aligh">';
 		echo $row['quantity_sold'];
 		echo '</td>';
-		echo '<td>';
+		echo '<td class="w3-right-align">';
 		echo $row['retail_price'];
 		echo '</td>';
 		echo '</tr>';
@@ -170,6 +178,7 @@ if(!empty($result) && $result->num_rows > 0) {
 
 		
 ?>
+
 
     <!--End of properties for ONE row-->
     </tbody>
