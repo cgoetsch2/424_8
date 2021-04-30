@@ -276,7 +276,7 @@ if (isset($_POST['purchase_product_name'])) {
     <a href="employeeresources.php"
       class="w3-bar-item w3-border-left w3-button w3-right w3-padding-24">EMPLOYEE<br>RESOURCES</a>
 
-    <a href="transactionhistory.php"
+    <a href="purchasehistory.php"
       class="w3-bar-item w3-border-left w3-button w3-right w3-padding-24">TRANSACTION<br>HISTORY</a>
 
     <a href="inventory.php" class="w3-bar-item w3-button w3-border-left w3-right w3-padding-24 ">VIEW<br>INVENTORY</a>

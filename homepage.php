@@ -84,7 +84,7 @@ if(!isset($submit)) {
     <!--Container for Enter Transaction Info and View Inventory buttons ENDS-->
     <!--Container for View Transaction History and Employee Resources buttons STARTS-->
     <!--Navigate to Transaction History screen-->
-    <a href="transactionhistory.php" class="w3-half w3-button w3-white w3-border"
+    <a href="purchasehistory.php" class="w3-half w3-button w3-white w3-border"
       style="padding:5%;width:48%;margin-right:2%">
       <input type="image" src="images/TransactionHistoryButton.png" style="width:85%"></a>
     <!--Navigate to Employee Resources screen-->

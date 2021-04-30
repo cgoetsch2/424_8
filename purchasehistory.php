@@ -1,23 +1,6 @@
 <!DOCTYPE html>
 <?php 
-if (isset($_POST['transaction_type']) && isset($_POST['date_sort'])) {
-	$transactionType = $_POST['transaction_type'];
-	if($_POST['date_sort']) == "OLD"))) {
-			$queryConcat="ASC";
-	} else {
-			$queryConcat="DESC";			
-	}		
-} else {
-	$transactionType = 'PURCHASES';
-	$queryConcat="DESC";
-}
-$transactionType = $_POST['transaction_type'];
-$date_sort = $_POST['date_sort'];
-if ($date_sort == "NEW") {
-	$queryConcat = "DESC";
-} else {
-	$queryConcat = "ASC";
-}
+
 ?>
 <html>
 <meta charset="UTF-8">
@@ -91,29 +74,21 @@ if ($date_sort == "NEW") {
     <!--Container for sorting/filter dropdowns STARTS-->
     <div class="w3-display-container w3-black w3-border" style="width:100%;height:13%;">
       
-      <!--Transaction display dropdown-->
-      <div class="w3-half" style="margin-block-start:1.75%;">
-        <label class="w3-text" style="margin-left:15%;font-size:larmediumge;"><b>Choose transaction type:</b></label>
-	<form action="transactionhistory.php" method="POST">
-        <select class="w3-select w3-border-black w3-dark-grey" name="transaction_type" style="width:25%;margin-left:1.5%;">
-          <option value="PURCHASES">Purchases</option>
-          <option value="SALES">Sales</option>
-        </select>
-		
+      <!--Transaction display button-->
+		<form action="salehistory.php"> <input type="submit" value="SWITCH TO SALE VIEW"> </form>
 
       </div>
       <!--Sorting date dropdown-->
-      <div class="w3-half" style="margin-block-start: 1.75%;">
-        <label class="w3-text" style="margin-left:40%;font-size:medium;"><b>Sort by:</b></label>
-        <select class="w3-select w3-border-black w3-dark-grey" name="date_sort" style="width:25%;margin-left:1.5%;">
-          <option value="NEW">NEW</option>
-          <option value="OLD">OLD</option>
-        </select>
+	  <form action="purchasehistory.php"
+		<div class="w3-half" style="margin-block-start: 1.75%;">
+        <label class="w3-text" style="margin-left:40%;font-size:medium;"><b>ORDER BY:</b></label>
+        <input type="radio" name="order_by" value="ASC" class="w3-check"> 
+		<input type="radio" name="order_by" value="DESC" class="w3-check"> 
 		<input type=submit>
 		</form>
 
       </div>
-
+ 
     </div>
     <!--Container for sorting-filter dropdowns ENDS-->
     
@@ -135,7 +110,16 @@ if ($date_sort == "NEW") {
     <tbody style="width:100%;">
     <!--'tr' encases properties for new row in table ... HTML requires manual entry of each row value
      -Code TBU to query database and display DB information instead-->
-	<?php
+<?php
+if(isset($_POST['order_by'])) {
+	if ($_POST['order_by'] == "NEW") {
+		$queryConcat = "ORDER BY supplier_purchase.transaction_id DESC";
+	} else {
+		$queryConcat = "ORDER BY supplier_purchase.transaction_id ASC";
+	}
+} else {
+	$queryConcat = "DESC";
+}
 //db login info
 $servername = 'localhost';
 $username = 'id16456968_group8';
@@ -152,97 +136,36 @@ $purchaseQuery = "";
 $saleQuery = "";
 $transactionType = "PURCHASES";
 
-
-
-
-/* if($transactionType == 'ALL TRANSACTIONS') {
-	$transactionQuery = "SELECT * FROM transaction";
-	$result = $conn->query($transactionQuery);
-	if(!$result){
-		die($conn->errno);
-	} else {
-		while ($row = $result->fetch_assoc()) {
-			echo '<tr>';
-			echo '<td>';
-			echo $row['transaction_datetime'];
-			echo '</td>';
-			echo '<td>';
-			echo $row['transaction_id'];
-			echo '</td>';
-			echo '<td>';
-			echo 'N/A';
-			echo '</td>';
-			echo '<td>';
-			echo 'N/A';
-			echo '</td>';
-			echo '<td>';
-			echo 'N/A';
-			echo '</td>';
-			echo '<td>';
-			echo 'N/A';
-			echo '</td>';
-			echo '<td>';
-			echo 'N/A';
-			echo '</td>';
-		}
-	} 
-} */
-if ($transactionType == 'PURCHASES') {
-	$purchaseQuery="SELECT * FROM supplier_purchase LEFT JOIN transaction ON supplier_purchase.purchase_id=transaction.transaction_id ORDER BY supplier_purchase.purchase_id ".$queryConcat;
-	$result = $conn->query($purchaseQuery);
-	if(!empty($result) && $result->num_rows > 0) {
-		while ($row = $result->fetch_assoc()) {
-			echo '<tr>';
-			echo '<td>';
-			echo $row['transaction_datetime'];
-			echo '</td>';
-			echo '<td>';
-			echo $row['transaction_id'];
-			echo '</td>';
-			echo '<td>';
-			echo $row['purchase_id'];
-			echo '</td>';
-			echo '<td>';
-			echo $row['product_id'];
-			echo '</td>';
-			echo '<td>';
-			echo $row['quantity_purchased'];
-			echo '</td>';
-			echo '<td>';
-			echo $row['cost']*-1;
-			echo '</td>';
-			echo '</tr>';
-		}
+//left-joining transaction with supplier_purchase to display 
+$purchaseQuery="SELECT * FROM supplier_purchase INNER JOIN transaction ON supplier_purchase.transaction_id=transaction.transaction_id ORDER BY supplier_purchase.transaction_id $queryConcat";
+$result = $conn->query($purchaseQuery);
+if(!empty($result) && $result->num_rows > 0) {
+	while ($row = $result->fetch_assoc()) {
+		echo '<tr>';
+		echo '<td>';
+		echo $row['transaction_datetime'];
+		echo '</td>';
+		echo '<td>';
+		echo $row['transaction_id'];
+		echo '</td>';
+		echo '<td>';
+		echo $row['purchase_id'];
+		echo '</td>';
+		echo '<td>';
+		echo $row['product_id'];
+		echo '</td>';
+		echo '<td>';
+		echo $row['quantity_purchased'];
+		echo '</td>';
+		echo '<td>';
+		echo $row['cost']*-1;
+		echo '</td>';
+		echo '</tr>';
 	}
 } else {
-	$saleQuery = "SELECT * FROM transaction LEFT JOIN sale ON sale.sale_id = transaction.transaction_datetime ".$queryConcat;
-	$result = $conn->query($saleQuery);
-	if(!empty($result) && $result->num_rows > 0) {
-		while ($row = $result->fetch_assoc()) {
-			echo '<tr>';
-			echo '<td>';
-			echo $row['transaction_datetime'];
-			echo '</td>';
-			echo '<td>';
-			echo $row['transaction_id'];
-			echo '</td>';
-			echo '<td>';
-			echo $row['sale_id'];
-			echo '</td>';
-			echo '<td>';
-			echo $row['product_id'];
-			echo '</td>';
-			echo '<td>';
-			echo $row['quantity_sold'];
-			echo '</td>';
-			echo '<td>';
-			echo $row['retail_price'];
-			echo '</td>';
-			echo '</tr>';
-			
-		}
-	}
+	die($purchaseQuery);
 }
+
 
 	
 

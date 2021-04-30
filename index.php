@@ -75,4 +75,3 @@ class Employee {
     <!--Page footer ENDS-->
 </body>
 </html>
-© 2021 GitHub, Inc.

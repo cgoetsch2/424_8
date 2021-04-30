@@ -89,8 +89,8 @@ class Employee {
     <a href="index.php" class="w3-bar-item w3-button w3-border-left w3-right w3-black w3-padding-24">LOG<br>OUT</a>
     <a href="employeeresources.php"
       class="w3-bar-item w3-border-left w3-button w3-right w3-padding-24">EMPLOYEE<br>RESOURCES</a>
-    <a href="transactionhistory.php"
-      class="w3-bar-item w3-border-left w3-button w3-right w3-padding-24">TRANSACTION<br>HISTORY</a>
+    <a href="purchasehistory.php"
+      class="w3-bar-item w3-border-left w3-button w3-right w3-padding-24">PURCHASE/SALE<br>HISTORY</a>
     <a href="inventory.php"
       class="w3-bar-item w3-button w3-border-left w3-right w3-padding-24 w3-pale-red">VIEW<br>INVENTORY</a>
     <!--Current screen-->
